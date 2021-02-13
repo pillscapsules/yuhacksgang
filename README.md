@@ -1,2 +1,2 @@
-# PygameForBeginners
-A simple 2D python game designed to teach you the pygame module.
+# Zombie Shooter
+A simple 2D python game where two players face off in shooting zombies
