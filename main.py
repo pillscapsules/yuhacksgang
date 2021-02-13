@@ -1,18 +1,19 @@
 import pygame
 import os
+import random
 pygame.font.init()  # for font of text
 pygame.mixer.init()  # for sound effects
 
 WIDTH, HEIGHT = 900, 500  # size of screen
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))  # starts the window
-pygame.display.set_caption("Balls")  # title
+pygame.display.set_caption("Zombie Shooter")  # title
 
 # colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
-
+GREEN = (0, 100, 0)
 # draw a rectangle on the screen as a border.
 # pygame.rect(x (start of x value), y (start of y value),
 # width (end of x value), height (end of y value))
@@ -22,41 +23,53 @@ BORDER = pygame.Rect(WIDTH//2 - 5, 0, 10, HEIGHT)
 # BULLET_FIRE_SOUND = pygame.mixer.Sound(
 #     os.path.join('Assets', 'Gun+Silencer1.mp3'))
 
-HEALTH_FONT = pygame.font.SysFont('timesnewroman', 40)  # font for health bar
-WINNER_FONT = pygame.font.SysFont('timesnewroman', 100)  # font for who won
+HEALTH_FONT = pygame.font.SysFont('sansserif', 40)  # font for health bar
+WINNER_FONT = pygame.font.SysFont('sansserif', 100)  # font for who won
 
 FPS = 60  # fps of game
 VEL = 5  # speed at which each key moves the spaceships
 BULLET_VEL = 7  # speed at which the bullets move
-MAX_BULLETS = 3  # max amount of bullets on screen
+MAX_BULLETS = 2  # max amount of bullets on screen
 SPACESHIP_WIDTH, SPACESHIP_HEIGHT = 55, 40
 
 YELLOW_HIT = pygame.USEREVENT + 1  # create a new event where yellow is hit
 RED_HIT = pygame.USEREVENT + 2  # create a new event where red is hit
+ZOMBIE_HIT1, ZOMBIE_HIT2, ZOMBIE_HIT3, ZOMBIE_HIT4, ZOMBIE_HIT5 = \
+    pygame.USEREVENT + 3, pygame.USEREVENT + 4, pygame.USEREVENT + 5,\
+    pygame.USEREVENT + 6, pygame.USEREVENT + 7
+ZOMBIE_HITS = [ZOMBIE_HIT1, ZOMBIE_HIT2, ZOMBIE_HIT3,
+               ZOMBIE_HIT4, ZOMBIE_HIT5]
 
 # Imports the yellow spaceship image and then scales it down and rotates it
 YELLOW_SPACESHIP_IMAGE = pygame.image.load(os.path.join
                                            ('Assets', 'spaceship_yellow.png'))
-YELLOW_SPACESHIP = pygame.transform.rotate(pygame.transform.scale(
-    YELLOW_SPACESHIP_IMAGE, (SPACESHIP_WIDTH, SPACESHIP_HEIGHT)), 90)
+YELLOW_SPACESHIP = pygame.transform.scale(YELLOW_SPACESHIP_IMAGE,
+                                          (SPACESHIP_WIDTH, SPACESHIP_HEIGHT))
 
 # Imports the red spaceship image and then scales it down and rotates it
 RED_SPACESHIP_IMAGE = pygame.image.load(os.path.join
                                         ('Assets', 'spaceship_red.png'))
-RED_SPACESHIP = pygame.transform.rotate(pygame.transform.scale(
-    RED_SPACESHIP_IMAGE, (SPACESHIP_WIDTH, SPACESHIP_HEIGHT)), 270)
+RED_SPACESHIP = pygame.transform.scale(RED_SPACESHIP_IMAGE,
+                                       (SPACESHIP_WIDTH, SPACESHIP_HEIGHT))
 
+ZOMBIE_1 = pygame.transform.rotate(pygame.image.load(
+    os.path.join('Assets', 'zombie.png')), 180)
+ZOMBIE = pygame.transform.scale(ZOMBIE_1, (SPACESHIP_WIDTH, SPACESHIP_HEIGHT))
+
+ZOMBIE_2 = pygame.transform.rotate(pygame.image.load(
+    os.path.join('Assets', 'zombie2.png')), 180)
+ZOMBIE2 = pygame.transform.scale(ZOMBIE_2, (SPACESHIP_WIDTH, SPACESHIP_HEIGHT))
 # Imports the background space image and resizes it to size of the screen
-SPACE = pygame.transform.scale(
-    pygame.image.load(os.path.join('Assets', 'space.png')), (WIDTH, HEIGHT))
+GRASS = pygame.transform.scale(
+    pygame.image.load(os.path.join('Assets', 'grass.png')), (WIDTH, HEIGHT))
 
 
 def draw_window(red, yellow, red_bullets, yellow_bullets,
-                red_health, yellow_health):
+                red_health, yellow_health, zombie_list):
     """Draws on the window. Things are drawn depending on the order written."""
     # WIN.fill(WHITE)  # color of window
     # WIN.blit puts things onto screen
-    WIN.blit(SPACE, (0, 0))  # draws background image
+    WIN.blit(GRASS, (0, 0))  # draws background image
     pygame.draw.rect(WIN, BLACK, BORDER)  # draws rectangle on screen
 
     red_health_text = HEALTH_FONT.render("Health: "
@@ -66,11 +79,14 @@ def draw_window(red, yellow, red_bullets, yellow_bullets,
 
     WIN.blit(red_health_text, (WIDTH - red_health_text.get_width() - 10, 10))
     WIN.blit(yellow_health_text, (10, 10))
-
     # 0,0 is top left of screen
     WIN.blit(YELLOW_SPACESHIP, (yellow.x, yellow.y))
     WIN.blit(RED_SPACESHIP, (red.x, red.y))
-
+    for sublist in zombie_list:
+        if sublist[0] < 45:
+            WIN.blit(ZOMBIE2, (sublist[1].x, sublist[1].y))
+        else:
+            WIN.blit(ZOMBIE, (sublist[1].x, sublist[1].y))
     for bullet in red_bullets:  # draws red bullets
         pygame.draw.rect(WIN, RED, bullet)
 
@@ -110,24 +126,36 @@ def red_handle_movement(keys_pressed, red):
         red.y += VEL
 
 
-def handle_bullets(yellow_bullets, red_bullets, yellow, red):
+def handle_bullets(yellow_bullets, red_bullets, zombie_list):
     """shows where bullet is when shot and also checks if it collides with
     the enemy spaceship"""
     for bullet in yellow_bullets:
-        bullet.x += BULLET_VEL
-        if red.colliderect(bullet):  # checks if bullet collided with red
-            pygame.event.post(pygame.event.Event(RED_HIT))
-            yellow_bullets.remove(bullet)
-        elif bullet.x > WIDTH:  # gets rid of bullet when on the right end
-            yellow_bullets.remove(bullet)
+        bullet.y -= BULLET_VEL
+        count = 0
+        for sublist in zombie_list:
+            # checks if bullet collides zombies
+            if sublist[1].colliderect(bullet):
+                pygame.event.post(pygame.event.Event(ZOMBIE_HITS[count]))
+                yellow_bullets.remove(bullet)
+                break
+            elif bullet.y < 0:  # gets rid of bullet when it hits the top
+                yellow_bullets.remove(bullet)
+                break
+            count += 1
 
     for bullet in red_bullets:
-        bullet.x -= BULLET_VEL
-        if yellow.colliderect(bullet):  # checks if bullet collided with yellow
-            pygame.event.post(pygame.event.Event(YELLOW_HIT))
-            red_bullets.remove(bullet)
-        elif bullet.x < 0:  # gets rid of bullet when on the left end
-            red_bullets.remove(bullet)
+        bullet.y -= BULLET_VEL
+        count = 0
+        for sublist in zombie_list:
+            # checks if bullet collides zombies
+            if sublist[1].colliderect(bullet):
+                pygame.event.post(pygame.event.Event(ZOMBIE_HITS[count]))
+                red_bullets.remove(bullet)
+                break
+            elif bullet.y < 0:  # gets rid of bullet when it hits the top
+                red_bullets.remove(bullet)
+                break
+            count += 1
 
 
 def draw_winner(text):
@@ -144,6 +172,21 @@ def main():
     # keeps location of each spaceship so we can change it
     red = pygame.Rect(700, 300, SPACESHIP_WIDTH, SPACESHIP_HEIGHT)
     yellow = pygame.Rect(100, 300, SPACESHIP_WIDTH, SPACESHIP_HEIGHT)
+    zombie_list = [[25, pygame.Rect(
+        random.randint(0, WIDTH//2 - SPACESHIP_WIDTH - 5), 0,
+        SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 3],
+                   [35, pygame.Rect(
+                       random.randint(0, WIDTH//2 - SPACESHIP_WIDTH - 5), 0,
+                       SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 3],
+                   [45, pygame.Rect(
+                       random.randint(0, WIDTH//2 - SPACESHIP_WIDTH - 5), 0,
+                       SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 5],
+                   [55, pygame.Rect(
+                       random.randint(0, WIDTH//2 - SPACESHIP_WIDTH - 5), 0,
+                       SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 5],
+                   [65, pygame.Rect(
+                       random.randint(0, WIDTH//2 - SPACESHIP_WIDTH - 5), 0,
+                       SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 7]]
 
     red_bullets = []
     yellow_bullets = []
@@ -153,6 +196,7 @@ def main():
 
     clock = pygame.time.Clock()
     run = True
+    timeit = 0
     while run:  # running the game
         clock.tick(FPS)  # controls how fast the while loop runs
         for event in pygame.event.get():
@@ -166,8 +210,8 @@ def main():
                         len(yellow_bullets) < MAX_BULLETS:
                     # makes the bullet and puts it at the yellow spaceship
                     # with the width and height of the bullet being (10, 5)
-                    bullet = pygame.Rect(yellow.x + yellow.width,
-                                         yellow.y + yellow.height//2 - 2, 10, 5)
+                    bullet = pygame.Rect(yellow.x + yellow.width//2,
+                                         yellow.y, 5, 10)
                     yellow_bullets.append(bullet)
                     # BULLET_FIRE_SOUND.play()  # plays sound when firing
 
@@ -175,8 +219,7 @@ def main():
                         len(red_bullets) < MAX_BULLETS:
                     # makes the bullet and puts it at the red spaceship
                     # with the width and height of the bullet being (10, 5)
-                    bullet = pygame.Rect(red.x, red.y +
-                                         red.height//2 - 2, 10, 5)
+                    bullet = pygame.Rect(red.x + red.width//2, red.y, 5, 10)
                     red_bullets.append(bullet)
                     # BULLET_FIRE_SOUND.play()  # plays sound when firing
 
@@ -187,6 +230,20 @@ def main():
             if event.type == YELLOW_HIT:
                 yellow_health -= 1
                 # BULLET_HIT_SOUND.play()  # plays sound when ship is hit
+
+            for i in range(0, 5):
+                if event.type == ZOMBIE_HITS[i]:
+                    zombie_list[i][2] -= 1
+                if zombie_list[i][2] == 0:
+                    zombie_list[i][1] = pygame.Rect(
+                        random.randint(0, WIDTH//2 - SPACESHIP_WIDTH - 5), 0,
+                        SPACESHIP_WIDTH, SPACESHIP_HEIGHT)
+                    if zombie_list[i][0] <= 35:
+                        zombie_list[i][1] = 3
+                    elif zombie_list[i][0] <= 55:
+                        zombie_list[i][1] = 5
+                    else:
+                        zombie_list[i][1] = 7
 
         # win condition
         winner_text = ""
@@ -207,11 +264,14 @@ def main():
         # calls functions to move red
         red_handle_movement(keys_pressed, red)
 
-        handle_bullets(yellow_bullets, red_bullets, yellow, red)
+        handle_bullets(yellow_bullets, red_bullets, zombie_list)
 
+        timeit += 1
         draw_window(red, yellow, red_bullets, yellow_bullets,
-                    red_health, yellow_health)
-
+                    red_health, yellow_health, zombie_list)
+        for sublist in zombie_list:
+            if timeit % sublist[0] == 0:
+                sublist[1].y += 25
     main()
 
 
