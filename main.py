@@ -20,7 +20,7 @@ BORDER = pygame.Rect(WIDTH//2 - 5, 0, 10, HEIGHT)
 
 BULLET_HIT_SOUND = pygame.mixer.Sound(os.path.join('Assets', 'oo.wav'))
 BULLET_HIT_SOUND1 = pygame.mixer.Sound(os.path.join('Assets', 'aa.wav'))
-WIN_SOUND = pygame.mixer.Sound(os.path.join('Assets', 'audiojungle.mp3'))
+WIN_SOUND = pygame.mixer.Sound(os.path.join('Assets', 'victory.mp3'))
 BULLET_FIRE_SOUND = pygame.mixer.Sound(
     os.path.join('Assets', 'silencer.mp3'))
 
