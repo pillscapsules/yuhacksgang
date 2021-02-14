@@ -13,6 +13,8 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
+RED_SCORE = 0
+YELLOW_SCORE = 0
 # draw a rectangle on the screen as a border.
 # pygame.rect(x (start of x value), y (start of y value),
 # width (end of x value), height (end of y value))
@@ -89,8 +91,16 @@ def draw_window(red, yellow, red_bullets, yellow_bullets,
     yellow_health_text = HEALTH_FONT.render("Health: "
                                             + str(yellow_health), True, WHITE)
 
+    red_win_text = HEALTH_FONT.render("Wins: " + str(RED_SCORE), True, BLACK)
+    yellow_win_text = HEALTH_FONT.render("Wins: " + str(YELLOW_SCORE)
+                                         , True, BLACK)
+
     WIN.blit(red_health_text, (WIDTH - red_health_text.get_width() - 10, 10))
     WIN.blit(yellow_health_text, (10, 10))
+    WIN.blit(yellow_win_text, (10, HEIGHT - 30))
+    WIN.blit(red_win_text, (WIDTH - red_win_text.get_width() - 10,
+                            HEIGHT - 30))
+
     # 0,0 is top left of screen
     WIN.blit(YELLOW_SPACESHIP, (yellow.x, yellow.y))
     WIN.blit(RED_SPACESHIP, (red.x, red.y))
@@ -235,7 +245,7 @@ def main():
                        SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 7]]
 
     zombie_list2 = [[25, pygame.Rect(
-        random.randint(WIDTH//2 - SPACESHIP_WIDTH - 5, WIDTH), 0,
+        random.randint(WIDTH//2, WIDTH - 50), 0,
         SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 3],
                    [35, pygame.Rect(
                        random.randint(WIDTH//2, WIDTH - 50), 0,
@@ -330,9 +340,13 @@ def main():
         winner_text = ""
         if red_health <= 0:
             winner_text = "Yellow wins!"
+            global YELLOW_SCORE
+            YELLOW_SCORE += 1
 
         if yellow_health <= 0:
             winner_text = "Red wins!"
+            global RED_SCORE
+            RED_SCORE += 1
 
         if winner_text != "":
             draw_winner(winner_text)
