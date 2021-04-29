@@ -105,13 +105,13 @@ def main_menu():
         WIN.fill(GREEN)
         title = text_format("Zombification", 'verdana', 90, RED)
         if selected == "start":
-            text_start = text_format("START", 'verdana', 75, WHITE)
+            text_start = text_format("START", 'verdana', 65, WHITE)
         else:
-            text_start = text_format("START", 'verdana', 75, BLACK)
+            text_start = text_format("START", 'verdana', 65, BLACK)
         if selected == "quit":
-            text_quit = text_format("QUIT", 'verdana', 75, WHITE)
+            text_quit = text_format("QUIT", 'verdana', 65, WHITE)
         else:
-            text_quit = text_format("QUIT", 'verdana', 75, BLACK)
+            text_quit = text_format("QUIT", 'verdana', 65, BLACK)
 
         title_rect = title.get_rect()
         start_rect = text_start.get_rect()
