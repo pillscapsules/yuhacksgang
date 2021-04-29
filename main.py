@@ -6,13 +6,14 @@ pygame.mixer.init()  # for sound effects
 
 WIDTH, HEIGHT = 900, 500  # size of screen
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))  # starts the window
-pygame.display.set_caption("Zombie Shooter")  # title
+pygame.display.set_caption("Zombification")  # title
 
 # colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 YELLOW = (255, 255, 0)
+GREEN = (0, 51, 0)
 RED_SCORE = 0
 YELLOW_SCORE = 0
 # draw a rectangle on the screen as a border.
@@ -37,17 +38,9 @@ SPACESHIP_WIDTH, SPACESHIP_HEIGHT = 55, 40
 
 YELLOW_HIT = pygame.USEREVENT + 1  # create a new event where yellow is hit
 RED_HIT = pygame.USEREVENT + 2  # create a new event where red is hit
-ZOMBIE_HIT1, ZOMBIE_HIT2, ZOMBIE_HIT3, ZOMBIE_HIT4, ZOMBIE_HIT5 = \
-    pygame.USEREVENT + 3, pygame.USEREVENT + 4, pygame.USEREVENT + 5,\
-    pygame.USEREVENT + 6, pygame.USEREVENT + 7
-ZOMBIE_HITS = [ZOMBIE_HIT1, ZOMBIE_HIT2, ZOMBIE_HIT3,
-               ZOMBIE_HIT4, ZOMBIE_HIT5]
-
-ZOMBIE_HIT6, ZOMBIE_HIT7, ZOMBIE_HIT8, ZOMBIE_HIT9, ZOMBIE_HIT10 = \
-    pygame.USEREVENT + 8, pygame.USEREVENT + 9, pygame.USEREVENT + 10, \
-    pygame.USEREVENT + 11, pygame.USEREVENT + 12
-ZOMBIE_HITS2 = [ZOMBIE_HIT6, ZOMBIE_HIT7, ZOMBIE_HIT8,
-                ZOMBIE_HIT9, ZOMBIE_HIT10]
+ZOMBIE_HITS = {}
+for j in range(0, 12):
+    ZOMBIE_HITS[j] = pygame.USEREVENT + 3 + j
 
 # Imports the yellow spaceship image and then scales it down and rotates it
 YELLOW_SPACESHIP_IMAGE = pygame.image.load(os.path.join
@@ -78,6 +71,62 @@ GRASS = pygame.transform.scale(
     pygame.image.load(os.path.join('Assets', 'grass.png')), (WIDTH, HEIGHT))
 
 
+def text_format(message, text_font, text_size, text_color):
+    new_font = pygame.font.SysFont(text_font, text_size, True)
+    new_text = new_font.render(message, False, text_color)
+
+    return new_text
+
+
+# Main Menu
+def main_menu():
+
+    menu = True
+    selected = "start"
+
+    while menu:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    selected = "start"
+                elif event.key == pygame.K_DOWN:
+                    selected = "quit"
+                if event.key == pygame.K_RETURN:
+                    if selected == "start":
+                        main()
+                    if selected == "quit":
+                        pygame.quit()
+                        quit()
+
+        # Main Menu UI
+        WIN.fill(GREEN)
+        title = text_format("Zombification", 'verdana', 90, RED)
+        if selected == "start":
+            text_start = text_format("START", 'verdana', 75, WHITE)
+        else:
+            text_start = text_format("START", 'verdana', 75, BLACK)
+        if selected == "quit":
+            text_quit = text_format("QUIT", 'verdana', 75, WHITE)
+        else:
+            text_quit = text_format("QUIT", 'verdana', 75, BLACK)
+
+        title_rect = title.get_rect()
+        start_rect = text_start.get_rect()
+        quit_rect = text_quit.get_rect()
+
+        # Main Menu Text
+        WIN.blit(title, (WIDTH/2 - (title_rect[2]/2), 80))
+        WIN.blit(text_start, (WIDTH/2 - (start_rect[2]/2), 300))
+        WIN.blit(text_quit, (WIDTH/2 - (quit_rect[2]/2), 360))
+        pygame.display.update()
+        clock = pygame.time.Clock()
+        clock.tick(FPS)
+        pygame.display.set_caption("Zombification")
+
+
 def draw_window(red, yellow, red_bullets, yellow_bullets,
                 red_health, yellow_health, zombie_list, zombie_list2):
     """Draws on the window. Things are drawn depending on the order written."""
@@ -92,8 +141,8 @@ def draw_window(red, yellow, red_bullets, yellow_bullets,
                                             + str(yellow_health), True, WHITE)
 
     red_win_text = HEALTH_FONT.render("Wins: " + str(RED_SCORE), True, BLACK)
-    yellow_win_text = HEALTH_FONT.render("Wins: " + str(YELLOW_SCORE)
-                                         , True, BLACK)
+    yellow_win_text = HEALTH_FONT.render("Wins: " + str(YELLOW_SCORE),
+                                         True, BLACK)
 
     WIN.blit(red_health_text, (WIDTH - red_health_text.get_width() - 10, 10))
     WIN.blit(yellow_health_text, (10, 10))
@@ -177,11 +226,11 @@ def handle_bullets(yellow_bullets, red_bullets, zombie_list,
 
     for bullet in red_bullets:
         bullet.y -= BULLET_VEL
-        count = 0
+        count = 6
         for sublist in zombie_list2:
             # checks if bullet collides zombies
             if sublist[1].colliderect(bullet):
-                pygame.event.post(pygame.event.Event(ZOMBIE_HITS2[count]))
+                pygame.event.post(pygame.event.Event(ZOMBIE_HITS[count]))
                 red_bullets.remove(bullet)
                 break
             elif bullet.y < 0:  # gets rid of bullet when it hits the top
@@ -200,15 +249,15 @@ def handle_bullets(yellow_bullets, red_bullets, zombie_list,
             pygame.event.post(pygame.event.Event(ZOMBIE_HITS[count]))
         count += 1
 
-    count = 0
+    count = 6
     for sublist in zombie_list2:
         # checks if zombie collided with yellow
         if red.colliderect(sublist[1]):
             pygame.event.post(pygame.event.Event(RED_HIT))
-            pygame.event.post(pygame.event.Event(ZOMBIE_HITS2[count]))
+            pygame.event.post(pygame.event.Event(ZOMBIE_HITS[count]))
         elif sublist[1].y >= HEIGHT:  # gets rid of zombie when at bottom
             pygame.event.post(pygame.event.Event(RED_HIT))
-            pygame.event.post(pygame.event.Event(ZOMBIE_HITS2[count]))
+            pygame.event.post(pygame.event.Event(ZOMBIE_HITS[count]))
         count += 1
 
 
@@ -228,6 +277,7 @@ def main():
     # keeps location of each spaceship so we can change it
     red = pygame.Rect(700, 300, SPACESHIP_WIDTH, SPACESHIP_HEIGHT)
     yellow = pygame.Rect(100, 300, SPACESHIP_WIDTH, SPACESHIP_HEIGHT)
+
     zombie_list = [[25, pygame.Rect(
         random.randint(0, WIDTH//2 - SPACESHIP_WIDTH - 5), 0,
         SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 3],
@@ -241,6 +291,9 @@ def main():
                        random.randint(0, WIDTH//2 - SPACESHIP_WIDTH - 5), 0,
                        SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 5],
                    [65, pygame.Rect(
+                       random.randint(0, WIDTH//2 - SPACESHIP_WIDTH - 5), 0,
+                       SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 7],
+                   [75, pygame.Rect(
                        random.randint(0, WIDTH//2 - SPACESHIP_WIDTH - 5), 0,
                        SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 7]]
 
@@ -258,7 +311,10 @@ def main():
                        SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 5],
                    [65, pygame.Rect(
                        random.randint(WIDTH//2, WIDTH - 50), 0,
-                       SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 7]]
+                       SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 7],
+                   [75, pygame.Rect(
+                       random.randint(WIDTH//2, WIDTH - 50), 0,
+                    SPACESHIP_WIDTH, SPACESHIP_HEIGHT), 7]]
 
     red_bullets = []
     yellow_bullets = []
@@ -319,22 +375,21 @@ def main():
                     else:
                         zombie_list[i][2] = 7
 
-            for i in range(0, 5):
-                if event.type == ZOMBIE_HITS2[i]:
-                    zombie_list2[i][2] -= 1
+            for i in range(6, 12):
+                if event.type == ZOMBIE_HITS[i]:
+                    zombie_list2[i - 6][2] -= 1
                     # plays sound when ship is hit
                     BULLET_HIT_SOUND.play()
-
-                if zombie_list2[i][2] == 0:
-                    zombie_list2[i][1] = pygame.Rect(
+                if zombie_list2[i - 6][2] == 0:
+                    zombie_list2[i - 6][1] = pygame.Rect(
                         random.randint(WIDTH//2, WIDTH - 50),
                         0, SPACESHIP_WIDTH, SPACESHIP_HEIGHT)
-                    if zombie_list2[i][0] <= 35:
-                        zombie_list2[i][2] = 3
-                    elif zombie_list2[i][0] <= 55:
-                        zombie_list2[i][2] = 5
+                    if zombie_list2[i - 6][0] <= 35:
+                        zombie_list2[i - 6][2] = 3
+                    elif zombie_list2[i - 6][0] <= 55:
+                        zombie_list2[i - 6][2] = 5
                     else:
-                        zombie_list2[i][2] = 7
+                        zombie_list2[i - 6][2] = 7
 
         # win condition
         winner_text = ""
@@ -372,8 +427,16 @@ def main():
         for sublist in zombie_list2:
             if timeit % sublist[0] == 0:
                 sublist[1].y += 25
-    main()
+    main_menu()
+
+
+class Zombie:
+    """
+    Creates a zombie instance
+    """
+    def __init__(self):
+        pass
 
 
 if __name__ == "__main__":
-    main()
+    main_menu()
