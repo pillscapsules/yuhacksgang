@@ -13,3 +13,5 @@ The controls for the players are WASD to move and Left Ctrl to shoot for player 
 ## Try it yourself!
 
 Just download the files, open main.py and run it!
+
+[Submitted to yuHacks 2021](https://devpost.com/software/zombie-shooter-d5a9hi)
